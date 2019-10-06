@@ -1,38 +1,40 @@
 'use strict';
 
+/** Class representing a generic mongo model. */
 class Model {
 
   constructor(schema) {
     this.schema = schema;
   }
 
-  jsonSchema() {
-    console.log(typeof this.schema.jsonSchema);
-    return typeof this.schema.jsonSchema === 'function'
-      ? this.schema.jsonSchema()
-      : {};
-  }
-
   get(_id) {
-    let queryObject = _id ? { _id } : {};
-    return this.schema.find(queryObject);
+    // Call the appropriate mongoose method to get
+    if(_id) {
+      // If 1, return it as a plain object
+      return this.schema.findOne({_id});
+    } else {
+      // If 2, return it as an object like this:
+      return  this.schema.find({})
+        .then((foundItems) => {
+          // { count: ##, results: [{}, {}] }
+          return { count: foundItems.length, results: foundItems};
+        });
+    }
   }
 
   create(record) {
-    console.log('r',record);
-    let newRecord = new this.schema(record);
-    console.log('n', newRecord);
+
+    const newRecord = this.schema(record);
     return newRecord.save();
   }
 
   update(_id, record) {
-    return this.schema.findByIdAndUpdate(_id, record, { new: true });
+    return this.schema.findByIdAndUpdate(_id, record, {new: true});
   }
 
   delete(_id) {
     return this.schema.findByIdAndDelete(_id);
   }
-
 }
 
 module.exports = Model;

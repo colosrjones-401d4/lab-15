@@ -3,11 +3,10 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-require('./roles-model.js');
 
-const SINGLE_USE_TOKENS = !!process.env.SINGLE_USE_TOKENS;
-const TOKEN_EXPIRE = process.env.TOKEN_LIFETIME || '5m';
-const SECRET = process.env.SECRET || 'foobar';
+const SINGLE_USE = !!process.env.SINGLE_USE;
+const TOKEN_EXPIRE_TIME = process.env.TOKEN_EXPIRE_TIME;
+const SECRET = process.env.SECRET;
 
 const usedTokens = new Set();
 
@@ -16,40 +15,15 @@ const users = new mongoose.Schema({
   password: {type:String, required:true},
   email: {type: String},
   role: {type: String, default:'user', enum: ['admin','editor','user']},
-}, {
-  toObject: { virtuals: true },
-  toJSON: { virtuals: true },
 });
 
-users.virtual('acl', {
-  ref: 'roles',
-  localField: 'role',
-  foreignField: 'role',
-  justOne: true,
-});
-
-users.pre('findOne', function() {
-  try {
-    this.populate('acl');
-  } catch(err) {
-    console.error(err);
-  }
-});
-
-users.post('save', function() {
-  try {
-    this.populate('acl');
-    return this.execPopulate();
-  } catch(err) {
-    console.log(err);
-  }
-});
-
-users.pre('save', async function() {
-  if (this.isModified('password'))
-  {
-    this.password = await bcrypt.hash(this.password, 10);
-  }
+users.pre('save', function(next) {
+  bcrypt.hash(this.password, 10)
+    .then(hashedPassword => {
+      this.password = hashedPassword;
+      next();
+    })
+    .catch(console.error);
 });
 
 users.statics.createFromOauth = function(email) {
@@ -59,28 +33,15 @@ users.statics.createFromOauth = function(email) {
   return this.findOne( {email} )
     .then(user => {
       if( !user ) { throw new Error('User Not Found'); }
+      console.log('Welcome Back', user.username);
       return user;
     })
     .catch( error => {
+      console.log('Creating new user');
       let username = email;
       let password = 'none';
       return this.create({username, password, email});
     });
-
-};
-
-users.statics.authenticateToken = function(token) {
-
-  if ( usedTokens.has(token ) ) {
-    return Promise.reject('Invalid Token');
-  }
-
-  try {
-    let parsedToken = jwt.verify(token, SECRET);
-    (SINGLE_USE_TOKENS) && parsedToken.type !== 'key' && usedTokens.add(token);
-    let query = {_id: parsedToken.id};
-    return this.findOne(query);
-  } catch(e) { throw new Error('Invalid Token'); }
 
 };
 
@@ -91,33 +52,40 @@ users.statics.authenticateBasic = function(auth) {
     .catch(error => {throw error;});
 };
 
+users.statics.authenticateToken = function(token){
+
+  if (usedTokens.has(token)) {
+    return Promise.reject('Invalid Token');
+  }
+
+  try {
+    let parsedToken = jwt.verify(token, SECRET);
+    if ( SINGLE_USE && parsedToken.type !== 'key'){
+      usedTokens.add(token);
+    }
+    let query = {_id: parsedToken.id};
+    return this.findOne(query);
+  } catch (error) { throw new Error('Invalid Token'); }
+};
+
 users.methods.comparePassword = function(password) {
   return bcrypt.compare( password, this.password )
     .then( valid => valid ? this : null);
 };
 
 users.methods.generateToken = function(type) {
-
+  
   let token = {
     id: this._id,
-    capabilities: (this.acl && this.acl.capabilities) || [],
-    type: type || 'user',
+    role: this.role,
+    type: type || 'regular',
   };
 
-  let options = {};
-  if ( type !== 'key' && !! TOKEN_EXPIRE ) {
-    options = { expiresIn: TOKEN_EXPIRE };
+  let signOptions = {};
+  if(type !== 'key' && TOKEN_EXPIRE_TIME){
+    signOptions = { expiresIn: TOKEN_EXPIRE_TIME};
   }
-
-  return jwt.sign(token, SECRET, options);
-};
-
-users.methods.can = function(capability) {
-  return this.acl.capabilities.includes(capability);
-};
-
-users.methods.generateKey = function() {
-  return this.generateToken('key');
+  return jwt.sign(token, SECRET, signOptions);
 };
 
 module.exports = mongoose.model('users', users);
