@@ -15,14 +15,18 @@ authRouter.post('/signup', (req, res, next) => {
       req.user = user;
       res.set('token', req.token);
       res.cookie('auth', req.token);
-      res.send(req.token);
-    })
-    .catch(next);
+      res.status(200).send(req.token);
+    }).catch(next);
 });
 
-authRouter.post('/signin', auth(), (req, res, next) => {
+authRouter.post('/signin', auth, (req, res, next) => {
   res.cookie('auth', req.token);
-  res.send(req.token);
+  res.status(200).send(req.token);
+});
+
+authRouter.post('/key', auth, (request, response, next) => {
+  let key = request.user.generateToken('key');
+  response.status(200).send(key);
 });
 
 authRouter.get('/oauth', (req,res,next) => {
@@ -32,17 +36,5 @@ authRouter.get('/oauth', (req,res,next) => {
     })
     .catch(next);
 });
-
-authRouter.post('/key', auth('get-key'), (req, res) => {
-  res.send(req.user.generateToken('key'));
-});
-
-//New authorized routes
-
-authRouter.get('/hidden-stuff', auth('read'), (req, res) => {res.send('You are authroized');});
-
-authRouter.post('/create-stuff', auth('create'), (req, res) => {res.send('You are authroized');});
-
-authRouter.delete('/delete-stuff', auth('delete'), (req, res) => {res.send('You are authroized');});
 
 module.exports = authRouter;
