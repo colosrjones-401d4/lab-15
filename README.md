@@ -1,11 +1,12 @@
-## Access Control
-[![Build Status](https://travis-ci.org/colosrjones-401d4/lab-15.svg?branch=master)](https://travis-ci.org/colosrjones-401d4/lab-14/builds/593338940)
+## API & Auth Server 
+
+[![Build Status](https://travis-ci.org/colosrjones-401d4/lab-15.svg?branch=master)](https://travis-ci.org/colosrjones-401d4/lab-15)
 
 ### Author: Steven Jones
 
 ### Links and Resources
-* [repo](https://github.com/colosrjones-401d4/lab-14/pull/1)
-* [travis](https://travis-ci.org/colosrjones-401d4/lab-14/builds/593338940)
+* [repo](https://github.com/colosrjones-401d4/lab-15)
+* [travis](https://travis-ci.org/colosrjones-401d4/lab-15)
 
 
 ### Setup
