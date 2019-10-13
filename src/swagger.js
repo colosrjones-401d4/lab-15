@@ -26,3 +26,6 @@ let options = {
 };
 expressSwagger(options);
 swaggerServer.listen(3333);
+
+// start up a specific standalone swagger server on a specific port
+// http://[domain]/api-docs

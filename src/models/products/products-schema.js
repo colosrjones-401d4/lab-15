@@ -2,6 +2,7 @@
 
 const mongoose = require('mongoose');
 
+// What fields and constraints do we want?
 const productSchema = mongoose.Schema({
   name: {
     type: String,
