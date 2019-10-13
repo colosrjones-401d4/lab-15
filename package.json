@@ -39,5 +39,8 @@
   "bugs": {
     "url": "https://github.com/colosrjones-401d4/lab-14/issues"
   },
-  "homepage": "https://github.com/colosrjones-401d4/lab-14#readme"
+  "homepage": "https://github.com/colosrjones-401d4/lab-14#readme",
+  "directories": {
+    "doc": "docs"
+  }
 }
