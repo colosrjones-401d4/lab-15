@@ -1,13 +1,17 @@
 'use strict';
 
-process.env.SECRET='test';
+process.env.SECRET = 'test';
 
 const jwt = require('jsonwebtoken');
+const populateRoles = require('../../../src/middleware/populate-roles');
 
+// const Roles = require('../../../src/auth/roles-model.js');
 const server = require('../../../src/app.js').server;
 const supergoose = require('../../supergoose.js');
 
 const mockRequest = supergoose.server(server);
+
+populateRoles();
 
 let users = {
   admin: {username: 'admin', password: 'password', role: 'admin'},
@@ -15,12 +19,15 @@ let users = {
   user: {username: 'user', password: 'password', role: 'user'},
 };
 
-beforeAll( () =>{
-  supergoose.startDB();
+
+
+beforeAll(async (done) => {
+  await supergoose.startDB();
+  done();
 });
-afterAll( () => {
-  supergoose.stopDB();
-});
+
+
+afterAll(supergoose.stopDB);
 
 describe('Auth Router', () => {
   
@@ -39,6 +46,7 @@ describe('Auth Router', () => {
             id = token.id;
             encodedToken = results.text;
             expect(token.id).toBeDefined();
+            expect(token.capabilities).toBeDefined();
           });
       });
 
@@ -48,33 +56,22 @@ describe('Auth Router', () => {
           .then(results => {
             var token = jwt.verify(results.text, process.env.SECRET);
             expect(token.id).toEqual(id);
+            expect(token.capabilities).toBeDefined();
           });
       });
 
       it('can signin with bearer', () => {
         return mockRequest.post('/signin')
-          .auth(users[userType].username, users[userType].password)
+          .set('Authorization', `Bearer ${encodedToken}`)
           .then(results => {
-            return mockRequest.post('/signin')
-              .set('Authorization', 'Bearer ' + results.text)
-              .then(result => {
-                var token = jwt.verify(result.text, process.env.SECRET);
-                expect(token.id).toEqual(id);
-              });
+            var token = jwt.verify(results.text, process.env.SECRET);
+            expect(token.id).toEqual(id);
+            expect(token.capabilities).toBeDefined();
           });
       });
-      it('can signin with key', () => {
-        return mockRequest.post('/key')
-          .auth(users[userType].username, users[userType].password)
-          .then(results => {
-            return mockRequest.post('/signin')
-              .set('Authorization', 'Bearer ' + results.text)
-              .then(result => {
-                var token = jwt.verify(result.text, process.env.SECRET);
-                expect(token.id).toEqual(id);
-              });
-          });
-      });
-    });   
+
+    });
+    
   });
+  
 });
