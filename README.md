@@ -6,6 +6,7 @@
 ### Links and Resources
 * [repo](https://github.com/colosrjones-401d4/lab-14/pull/1)
 * [travis](https://travis-ci.org/colosrjones-401d4/lab-14/builds/593338940)
+* [Json](https://app.swaggerhub.com/apis-docs/ColoSRJones/Lab15API/0.1)
 
 
 ### Setup
